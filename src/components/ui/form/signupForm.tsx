@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { z } from "zod";
+import Cookie from "js-cookie";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,10 +30,7 @@ const SignupSchema = z.object({
 
 type Signup = z.infer<typeof SignupSchema>;
 
-interface SignupFormProps {
-  setCookie: (key: string, value: string) => void;
-}
-export default function SignupForm({ setCookie }: SignupFormProps) {
+export default function SignupForm() {
   const router = useRouter();
 
   const {
@@ -61,9 +59,8 @@ export default function SignupForm({ setCookie }: SignupFormProps) {
       if (
         "authToken" in (data as Record<string, unknown>) &&
         typeof (data as Record<string, unknown>).authToken === "string"
-      ) {
-        setCookie("authToken", data?.authToken as string);
-      }
+      )
+        Cookie.set("authToken", data?.authToken as string);
 
       router.push("/admin/dashboard");
     } catch (err: unknown) {

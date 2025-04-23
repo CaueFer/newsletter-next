@@ -1,11 +1,8 @@
 "use server";
 
 import SignupForm from "@/components/ui/form/signupForm";
-import CookiesHelper from "@/lib/cookieStore";
 
 const SignupPage = async () => {
-  const { setCookie } = await CookiesHelper();
-
   return (
     <div
       className="min-h-screen flex items-center justify-center"
@@ -17,7 +14,7 @@ const SignupPage = async () => {
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold text-center mb-6">Criar conta</h1>
 
-        <SignupForm setCookie={setCookie} />
+        <SignupForm />
       </div>
     </div>
   );

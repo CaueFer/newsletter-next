@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Cookie from "js-cookie";
 
 import { Input } from "../input";
 import { Button } from "../button";
@@ -54,7 +55,7 @@ export default function LoginForm() {
         "authToken" in (data as Record<string, unknown>) &&
         typeof (data as Record<string, unknown>).authToken === "string"
       ) {
-        setCookie("authToken", data?.authToken as string);
+        Cookie.set("authToken", data?.authToken as string);
       }
 
       router.push("/admin/dashboard");
