@@ -1,9 +1,10 @@
-import { cookies } from "next/headers";
+"use server";
 
 import SignupForm from "@/components/ui/form/signupForm";
+import CookiesHelper from "@/lib/cookieStore";
 
 const SignupPage = async () => {
-  const cookieStore = await cookies();
+  const { setCookie } = await CookiesHelper();
 
   return (
     <div
@@ -16,7 +17,7 @@ const SignupPage = async () => {
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold text-center mb-6">Criar conta</h1>
 
-        <SignupForm cookieStore={cookieStore} />
+        <SignupForm setCookie={setCookie} />
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 import { Input } from "../input";
 import { Button } from "../button";
@@ -26,10 +25,7 @@ const LoginSchema = z.object({
 
 type Login = z.infer<typeof LoginSchema>;
 
-interface LoginFormProps {
-  cookieStore: ReadonlyRequestCookies;
-}
-export default function LoginForm({ cookieStore }: LoginFormProps) {
+export default function LoginForm() {
   const router = useRouter();
 
   const {
@@ -55,16 +51,15 @@ export default function LoginForm({ cookieStore }: LoginFormProps) {
       });
 
       if (
-        "jwt_token" in (data as Record<string, unknown>) &&
-        typeof (data as Record<string, unknown>).jwt_token === "string"
-      )
-        cookieStore.set("jwt_token", data?.jwt_token as string);
-
-      console.log(values);
+        "authToken" in (data as Record<string, unknown>) &&
+        typeof (data as Record<string, unknown>).authToken === "string"
+      ) {
+        setCookie("authToken", data?.authToken as string);
+      }
 
       router.push("/admin/dashboard");
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
+      if (err instanceof Error) setError("Ocorreu um erro, tente novamente!");
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +68,7 @@ export default function LoginForm({ cookieStore }: LoginFormProps) {
   return (
     <>
       <form onSubmit={handleSubmit(finalSubmit)} className="space-y-4">
+        {/* EMAIL */}
         <div>
           <label
             htmlFor="email"
@@ -85,6 +81,7 @@ export default function LoginForm({ cookieStore }: LoginFormProps) {
             type="email"
             placeholder="Digite seu email"
             required
+            disabled={isLoading}
             className="mt-1"
             {...register("email")}
           />
@@ -94,6 +91,8 @@ export default function LoginForm({ cookieStore }: LoginFormProps) {
             </p>
           )}
         </div>
+
+        {/* PASSWORD */}
         <div>
           <label
             htmlFor="password"
@@ -107,6 +106,7 @@ export default function LoginForm({ cookieStore }: LoginFormProps) {
               type={showPassword ? "text" : "password"}
               placeholder="Digite sua senha"
               required
+              disabled={isLoading}
               className="mt-1 w-full"
               {...register("password")}
             />

@@ -7,13 +7,16 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 import { Input } from "../input";
 import { Button } from "../button";
 import { post } from "@/lib/helpers";
 
 const SignupSchema = z.object({
+  name: z
+    .string()
+    .min(3, "Digite um nome maior")
+    .nonempty("Nome é obrigatório"),
   email: z
     .string()
     .email("Digite um email válido")
@@ -27,9 +30,9 @@ const SignupSchema = z.object({
 type Signup = z.infer<typeof SignupSchema>;
 
 interface SignupFormProps {
-  cookieStore: ReadonlyRequestCookies;
+  setCookie: (key: string, value: string) => void;
 }
-export default function SignupForm({ cookieStore }: SignupFormProps) {
+export default function SignupForm({ setCookie }: SignupFormProps) {
   const router = useRouter();
 
   const {
@@ -50,17 +53,17 @@ export default function SignupForm({ cookieStore }: SignupFormProps) {
 
     try {
       const data: Record<string, unknown> = await post("/auth/signup", {
+        name: values?.name,
         email: values?.email,
         password: values?.password,
       });
 
       if (
-        "jwt_token" in (data as Record<string, unknown>) &&
-        typeof (data as Record<string, unknown>).jwt_token === "string"
-      )
-        cookieStore.set("jwt_token", data?.jwt_token as string);
-
-      console.log(values);
+        "authToken" in (data as Record<string, unknown>) &&
+        typeof (data as Record<string, unknown>).authToken === "string"
+      ) {
+        setCookie("authToken", data?.authToken as string);
+      }
 
       router.push("/admin/dashboard");
     } catch (err: unknown) {
@@ -73,6 +76,29 @@ export default function SignupForm({ cookieStore }: SignupFormProps) {
   return (
     <>
       <form onSubmit={handleSubmit(finalSubmit)} className="space-y-4">
+        {/* NOME */}
+        <div>
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-foreground"
+          >
+            Nome
+          </label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Digite seu nome"
+            required
+            disabled={isLoading}
+            className="mt-1"
+            {...register("name")}
+          />
+          {errors?.name && (
+            <p className="text-sm text-red-500 mt-1">{errors?.name?.message}</p>
+          )}
+        </div>
+
+        {/* EMAIL */}
         <div>
           <label
             htmlFor="email"
@@ -85,6 +111,7 @@ export default function SignupForm({ cookieStore }: SignupFormProps) {
             type="email"
             placeholder="Digite seu email"
             required
+            disabled={isLoading}
             className="mt-1"
             {...register("email")}
           />
@@ -94,6 +121,8 @@ export default function SignupForm({ cookieStore }: SignupFormProps) {
             </p>
           )}
         </div>
+
+        {/* PASSWORD */}
         <div>
           <label
             htmlFor="password"
@@ -107,6 +136,7 @@ export default function SignupForm({ cookieStore }: SignupFormProps) {
               type={showPassword ? "text" : "password"}
               placeholder="Digite sua senha"
               required
+              disabled={isLoading}
               className="mt-1 w-full"
               {...register("password")}
             />
@@ -123,6 +153,7 @@ export default function SignupForm({ cookieStore }: SignupFormProps) {
             </p>
           )}
         </div>
+
         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
         <Button
           type="submit"

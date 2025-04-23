@@ -1,9 +1,8 @@
-import { cookies } from "next/headers";
-
 import LoginForm from "@/components/ui/form/loginForm";
+import CookiesHelper from "@/lib/cookieStore";
 
 const LoginPage = async () => {
-  const cookieStore = await cookies();
+  const { setCookie } = await CookiesHelper();
 
   return (
     <div
@@ -16,7 +15,7 @@ const LoginPage = async () => {
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold text-center mb-6">Login</h1>
 
-        <LoginForm cookieStore={cookieStore} />
+        <LoginForm setCookie={setCookie} />
       </div>
     </div>
   );
