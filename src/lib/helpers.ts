@@ -1,12 +1,3 @@
-interface FetchProps {
-  endpoint: string;
-  headers?: Record<string, string>;
-}
-
-interface PostProps extends FetchProps {
-  body: BodyInit | null;
-}
-
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
@@ -14,16 +5,16 @@ const formatEndpoint = (endpoint: string) => {
   return endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
 };
 
-export async function post({
-  endpoint,
-  headers,
-  body,
-}: PostProps): Promise<unknown> {
+export async function post(
+  endpoint: string,
+  body: unknown | null | undefined,
+  headers?: Record<string, string>
+): Promise<Record<string, unknown>> {
   try {
     const response = await fetch(`${API_URL}/${formatEndpoint(endpoint)}`, {
       method: "POST",
       headers: headers ?? { "Content-Type": "application/json" },
-      body,
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -39,7 +30,7 @@ export async function post({
   }
 }
 
-export async function get({ endpoint, headers }: FetchProps) {
+export async function get(endpoint: string, headers?: Record<string, string>) {
   try {
     const response = await fetch(`${API_URL}/${formatEndpoint(endpoint)}`, {
       method: "GET",
