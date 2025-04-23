@@ -17,18 +17,21 @@ const SubForm = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto p-4 bg-white rounded-lg shadow-lg text-black"
+      className="flex flex-col items-center justify-center gap-3 text-black"
     >
-      <Input
-        type="email"
-        placeholder="Digite seu email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        className="sm:flex-1"
-      />
-      <Button type="submit">
-        Receber
+      <div className="bg-white rounded-lg shadow-lg max-w-md md:w-md sm:w-sm mx-auto p-4">
+        <Input
+          type="email"
+          placeholder="Digite seu email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="flex-1"
+        />
+      </div>
+
+      <Button type="submit" className="w-36 shadow-lg">
+        Quero Receber
         <Send />
       </Button>
     </form>

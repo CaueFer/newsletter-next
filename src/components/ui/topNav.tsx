@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { Button } from "./button";
 
 const Topnav = () => {
+  const router = useRouter();
+
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -35,13 +38,22 @@ const Topnav = () => {
           </div>
 
           {/* CTA Button */}
-          <div className="flex items-center ">
+          <div className="flex flex-row items-center ">
             <Button
               variant="link"
-              className={`sm:ml-4 cursor-pointer
+              className={`
               ${isScrolled ? "text-foreground" : " text-white"}`}
             >
               Inscrever-se
+            </Button>
+            |
+            <Button
+              variant="link"
+              className={` 
+              ${isScrolled ? "text-foreground" : " text-white"}`}
+              onClick={() => router.push("/login")}
+            >
+              Login
             </Button>
           </div>
         </div>
