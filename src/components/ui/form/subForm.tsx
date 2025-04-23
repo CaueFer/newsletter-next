@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Input } from "../input";
 import { Button } from "../button";
+import { Send } from "lucide-react";
 
 const SubForm = () => {
   const [email, setEmail] = useState("");
@@ -26,7 +27,10 @@ const SubForm = () => {
         required
         className="sm:flex-1"
       />
-      <Button type="submit">Inscrever-se</Button>
+      <Button type="submit">
+        Receber
+        <Send />
+      </Button>
     </form>
   );
 };
