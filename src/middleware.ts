@@ -1,7 +1,8 @@
-import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET;
+import { JWT_SECRET } from "./lib/helpers";
+
 const protectedRoutes = ["/admin", "/admin/:path*"];
 
 export async function middleware(request: NextRequest) {
