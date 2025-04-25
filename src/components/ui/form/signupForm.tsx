@@ -59,8 +59,9 @@ export default function SignupForm() {
       if (
         "authToken" in (data as Record<string, unknown>) &&
         typeof (data as Record<string, unknown>).authToken === "string"
-      )
+      ) {
         Cookie.set("authToken", data?.authToken as string);
+      }
 
       router.push("/admin/dashboard");
     } catch (err: unknown) {

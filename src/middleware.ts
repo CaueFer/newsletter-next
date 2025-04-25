@@ -1,11 +1,11 @@
+import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "chave-default";
+const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET;
 const protectedRoutes = ["/admin", "/admin/:path*"];
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get("jwt_token")?.value;
+  const token = request.cookies.get("authToken")?.value;
 
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route.replace("/:path*", ""))
@@ -17,7 +17,11 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      jwt.verify(token, JWT_SECRET);
+      if (!JWT_SECRET) {
+        throw new Error("JWT_SECRET is not defined");
+      }
+
+      await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
 
       return NextResponse.next();
     } catch (err) {

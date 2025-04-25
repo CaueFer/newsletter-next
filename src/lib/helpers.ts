@@ -19,7 +19,7 @@ export async function post(
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Falha na requisição POST");
+      throw new Error(errorData.message || "Falha na requisição POST");
     }
 
     return await response.json();

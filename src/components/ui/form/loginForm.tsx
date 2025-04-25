@@ -60,7 +60,8 @@ export default function LoginForm() {
 
       router.push("/admin/dashboard");
     } catch (err: unknown) {
-      if (err instanceof Error) setError("Ocorreu um erro, tente novamente!");
+      if (err instanceof Error)
+        setError(err.message || "Ocorreu um erro, tente novamente!");
     } finally {
       setIsLoading(false);
     }
