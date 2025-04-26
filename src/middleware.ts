@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-
-import { JWT_SECRET } from "./lib/helpers";
+import { JWT_SECRET } from "./lib/defaultConst";
 
 const protectedRoutes = ["/admin", "/admin/:path*"];
 

@@ -1,7 +1,4 @@
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-
-export const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET;
+import { API_URL } from "./defaultConst";
 
 const formatEndpoint = (endpoint: string) => {
   return endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
