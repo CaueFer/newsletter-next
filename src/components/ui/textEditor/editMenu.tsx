@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Editor } from "@tiptap/core";
 import {
   AlignCenter,
@@ -11,6 +11,7 @@ import {
   Code,
   EllipsisVertical,
   Italic,
+  Link,
   Strikethrough,
   Underline,
 } from "lucide-react";
@@ -48,6 +49,7 @@ import {
   sizeMapToPx,
   valueFormatToText,
 } from "@/lib/defaultConst";
+import { LinkPopup } from "./linkPopup";
 
 interface EditMenuProps {
   editor: Editor | null;
@@ -57,6 +59,30 @@ function EditMenuComponent({ editor }: EditMenuProps) {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setRefresh] = useState(false);
+
+  const [popupState, setPopupState] = useState<{
+    isOpen: boolean;
+    x: number;
+    y: number;
+    initialUrl: string;
+  }>({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    initialUrl: "",
+  });
+
+  const getSelectionPosition = useCallback(() => {
+    if (!editor) return { x: 0, y: 0 };
+
+    const { to } = editor.state.selection;
+    const endRange = editor.view.coordsAtPos(to);
+
+    const x = endRange.left;
+    const y = endRange.bottom + 5;
+
+    return { x, y };
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -72,13 +98,37 @@ function EditMenuComponent({ editor }: EditMenuProps) {
         if (!fontSize) {
           editor.commands.setFontSize("18px");
         }
+
+        const appearLinkPopup = () => {
+          const isActive = editor?.isActive("link");
+
+          if (isActive) {
+            const currentLink = editor.getAttributes("link").href || "";
+            const { x, y } = getSelectionPosition();
+
+            setPopupState({
+              isOpen: true,
+              x,
+              y,
+              initialUrl: currentLink,
+            });
+          } else {
+            setPopupState({
+              isOpen: false,
+              x: 0,
+              y: 0,
+              initialUrl: "",
+            });
+          }
+        };
+        appearLinkPopup();
       }, 100);
     });
 
     return () => {
       editor.off("selectionUpdate");
     };
-  }, [editor]);
+  }, [editor, getSelectionPosition]);
 
   if (!editor) return null;
 
@@ -197,214 +247,275 @@ function EditMenuComponent({ editor }: EditMenuProps) {
     }
   };
 
+  const handleToogleLink = () => {
+    const isActive = editor?.isActive("link");
+
+    if (isActive) {
+      handleRemoveLink();
+    } else {
+      const currentLink = editor.getAttributes("link").href || "";
+      const { x, y } = getSelectionPosition();
+
+      setPopupState({
+        isOpen: true,
+        x,
+        y,
+        initialUrl: currentLink,
+      });
+    }
+  };
+
+  const handleSubmitLink = (link: string) => {
+    editor.chain().focus().setLink({ href: link }).run();
+  };
+
+  const handleRemoveLink = () => {
+    editor.chain().focus().unsetLink().run();
+  };
   return (
-    <div className="flex justify-center align-center p-2">
-      <TooltipProvider>
-        <Menubar>
-          {/* FORMAT */}
-          <MenubarMenu>
-            <Select
-              onValueChange={(e) => setFormatText(e)}
-              defaultValue={undefined}
-              value={getFormatText()}
-            >
-              <SelectTrigger className="w-[180px] focus-visible:ring-0 focus-visible:border-inherit py-1 max-h-[30px]">
-                <SelectValue placeholder="Escolher formato" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pr">Paragrafo</SelectItem>
-                <SelectItem value="bl">Lista de pontos</SelectItem>
-                <SelectItem value="tl">Lista de tarefas</SelectItem>
-                <SelectItem value="h1">Titulo 1</SelectItem>
-                <SelectItem value="h2">Titulo 2</SelectItem>
-                <SelectItem value="h3">Titulo 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </MenubarMenu>
+    <>
+      <div className="flex justify-center align-center p-2">
+        <TooltipProvider>
+          <Menubar>
+            {/* FORMAT */}
+            <MenubarMenu>
+              <Select
+                onValueChange={(e) => setFormatText(e)}
+                defaultValue={undefined}
+                value={getFormatText()}
+              >
+                <SelectTrigger className="w-[180px] focus-visible:ring-0 focus-visible:border-inherit py-1 max-h-[30px]">
+                  <SelectValue placeholder="Escolher formato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pr">Parágrafo</SelectItem>
+                  <SelectItem value="bl">Lista de pontos</SelectItem>
+                  <SelectItem value="tl">Lista de tarefas</SelectItem>
+                  <SelectItem value="h1">Titulo 1</SelectItem>
+                  <SelectItem value="h2">Titulo 2</SelectItem>
+                  <SelectItem value="h3">Titulo 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </MenubarMenu>
 
-          {/* SIZES */}
-          <MenubarMenu>
-            <Select
-              onValueChange={(e) => handleSizeChange(e)}
-              defaultValue={undefined}
-              value={sizeMapToAcron[editor.getAttributes("textStyle").fontSize]}
-            >
-              <SelectTrigger className="w-[180px] focus-visible:ring-0 focus-visible:border-inherit py-1 max-h-[30px]">
-                <SelectValue placeholder="Escolher tamanho" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="xs">Extra pequeno</SelectItem>
-                <SelectItem value="sm">Pequeno</SelectItem>
-                <SelectItem value="md">Médio</SelectItem>
-                <SelectItem value="lg">Grande</SelectItem>
-                <SelectItem value="xl">Extra Grande</SelectItem>
-              </SelectContent>
-            </Select>
-          </MenubarMenu>
+            {/* SIZES */}
+            <MenubarMenu>
+              <Select
+                onValueChange={(e) => handleSizeChange(e)}
+                defaultValue={undefined}
+                value={
+                  sizeMapToAcron[editor.getAttributes("textStyle").fontSize]
+                }
+              >
+                <SelectTrigger className="w-[150px] focus-visible:ring-0 focus-visible:border-inherit py-1 max-h-[30px]">
+                  <SelectValue placeholder="Escolher tamanho" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="xs">Extra Pequeno</SelectItem>
+                  <SelectItem value="sm">Pequeno</SelectItem>
+                  <SelectItem value="md">Médio</SelectItem>
+                  <SelectItem value="lg">Grande</SelectItem>
+                  <SelectItem value="xl">Extra Grande</SelectItem>
+                </SelectContent>
+              </Select>
+            </MenubarMenu>
 
-          <Separator orientation="vertical" />
+            <Separator orientation="vertical" />
 
-          {/* BOLD */}
-          <MenubarMenu>
-            <Button
-              onClick={handleBold}
-              variant="ghost"
-              className={cn(
-                "cursor-pointer",
-                editor.isActive("bold") ? "bg-zinc-200 dark:bg-zinc-700" : ""
-              )}
-            >
-              <Bold />
-            </Button>
-          </MenubarMenu>
+            {/* BOLD */}
+            <MenubarMenu>
+              <Button
+                onClick={handleBold}
+                variant="ghost"
+                className={cn(
+                  "cursor-pointer",
+                  editor.isActive("bold") ? "bg-zinc-200 dark:bg-zinc-700" : ""
+                )}
+              >
+                <Bold />
+              </Button>
+            </MenubarMenu>
 
-          {/* ITALIC */}
-          <MenubarMenu>
-            <Button
-              onClick={handleItalic}
-              variant="ghost"
-              className={cn(
-                "cursor-pointer",
-                editor.isActive("italic") ? "bg-zinc-200 dark:bg-zinc-700" : ""
-              )}
-            >
-              <Italic />
-            </Button>
-          </MenubarMenu>
+            {/* ITALIC */}
+            <MenubarMenu>
+              <Button
+                onClick={handleItalic}
+                variant="ghost"
+                className={cn(
+                  "cursor-pointer",
+                  editor.isActive("italic")
+                    ? "bg-zinc-200 dark:bg-zinc-700"
+                    : ""
+                )}
+              >
+                <Italic />
+              </Button>
+            </MenubarMenu>
 
-          {/* UNDERLINE */}
-          <MenubarMenu>
-            <Button
-              onClick={handleUnderline}
-              variant="ghost"
-              className={cn(
-                "cursor-pointer",
-                editor.isActive("underline")
-                  ? "bg-zinc-200 dark:bg-zinc-700"
-                  : ""
-              )}
-            >
-              <Underline />
-            </Button>
-          </MenubarMenu>
+            {/* UNDERLINE */}
+            <MenubarMenu>
+              <Button
+                onClick={handleUnderline}
+                variant="ghost"
+                className={cn(
+                  "cursor-pointer",
+                  editor.isActive("underline")
+                    ? "bg-zinc-200 dark:bg-zinc-700"
+                    : ""
+                )}
+              >
+                <Underline />
+              </Button>
+            </MenubarMenu>
 
-          {/* STRIKE */}
-          <MenubarMenu>
-            <Button
-              onClick={handleStrikethrough}
-              variant="ghost"
-              className={cn(
-                "cursor-pointer",
-                editor.isActive("strike") ? "bg-zinc-200 dark:bg-zinc-700" : ""
-              )}
-            >
-              <Strikethrough />
-            </Button>
-          </MenubarMenu>
+            {/* STRIKE */}
+            <MenubarMenu>
+              <Button
+                onClick={handleStrikethrough}
+                variant="ghost"
+                className={cn(
+                  "cursor-pointer",
+                  editor.isActive("strike")
+                    ? "bg-zinc-200 dark:bg-zinc-700"
+                    : ""
+                )}
+              >
+                <Strikethrough />
+              </Button>
+            </MenubarMenu>
 
-          {/* CODE */}
-          <MenubarMenu>
-            <Button
-              onClick={handleCode}
-              variant="ghost"
-              className={cn(
-                "cursor-pointer",
-                editor?.isActive("code") ? "bg-zinc-200 dark:bg-zinc-700" : ""
-              )}
-            >
-              <Code />
-            </Button>
-          </MenubarMenu>
+            {/* CODE */}
+            <MenubarMenu>
+              <Button
+                onClick={handleCode}
+                variant="ghost"
+                className={cn(
+                  "cursor-pointer",
+                  editor?.isActive("code") ? "bg-zinc-200 dark:bg-zinc-700" : ""
+                )}
+              >
+                <Code />
+              </Button>
+            </MenubarMenu>
 
-          {/* ALIGN */}
-          <MenubarMenu>
-            <MenubarTrigger className="cursor-pointer">
-              <EllipsisVertical size={15} />
-            </MenubarTrigger>
-            <MenubarContent className="flex flex-row">
-              {/* ESQUERDA */}
-              <Tooltip>
-                <TooltipTrigger>
-                  <MenubarItem onClick={() => handleAlign("left")}>
-                    <AlignLeft />
-                  </MenubarItem>
-                </TooltipTrigger>
-                <TooltipContent>Esquerda</TooltipContent>
-              </Tooltip>
+            {/* ALIGN */}
+            <MenubarMenu>
+              <MenubarTrigger className="cursor-pointer">
+                <EllipsisVertical size={15} />
+              </MenubarTrigger>
+              <MenubarContent className="flex flex-row justify-around">
+                {/* ESQUERDA */}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <MenubarItem onClick={() => handleAlign("left")}>
+                      <AlignLeft />
+                    </MenubarItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Esquerda</TooltipContent>
+                </Tooltip>
 
-              {/* CENTER */}
-              <Tooltip>
-                <TooltipTrigger>
-                  <MenubarItem onClick={() => handleAlign("center")}>
-                    <AlignCenter />
-                  </MenubarItem>
-                </TooltipTrigger>
-                <TooltipContent>Centro</TooltipContent>
-              </Tooltip>
+                {/* CENTER */}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <MenubarItem onClick={() => handleAlign("center")}>
+                      <AlignCenter />
+                    </MenubarItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Centro</TooltipContent>
+                </Tooltip>
 
-              {/* DIREITA */}
-              <Tooltip>
-                <TooltipTrigger>
-                  <MenubarItem onClick={() => handleAlign("right")}>
-                    <AlignRight />
-                  </MenubarItem>
-                </TooltipTrigger>
-                <TooltipContent>Direita</TooltipContent>
-              </Tooltip>
+                {/* DIREITA */}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <MenubarItem onClick={() => handleAlign("right")}>
+                      <AlignRight />
+                    </MenubarItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Direita</TooltipContent>
+                </Tooltip>
 
-              {/* JUSTIFY */}
-              <Tooltip>
-                <TooltipTrigger>
-                  <MenubarItem onClick={() => handleAlign("justify")}>
-                    <AlignJustify />
-                  </MenubarItem>
-                </TooltipTrigger>
-                <TooltipContent>Justificar</TooltipContent>
-              </Tooltip>
-            </MenubarContent>
-          </MenubarMenu>
+                {/* JUSTIFY */}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <MenubarItem onClick={() => handleAlign("justify")}>
+                      <AlignJustify />
+                    </MenubarItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Justificar</TooltipContent>
+                </Tooltip>
 
-          <Separator orientation="vertical" />
+                {/* LINK */}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <MenubarItem
+                      onClick={() => handleToogleLink()}
+                      className={cn(
+                        editor?.isActive("link")
+                          ? "bg-zinc-200 dark:bg-zinc-700"
+                          : ""
+                      )}
+                    >
+                      <Link />
+                    </MenubarItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Link</TooltipContent>
+                </Tooltip>
+              </MenubarContent>
+            </MenubarMenu>
 
-          <MenubarMenu>
-            <MenubarTrigger>View</MenubarTrigger>
-            <MenubarContent>
-              <MenubarCheckboxItem>
-                Always Show Bookmarks Bar
-              </MenubarCheckboxItem>
-              <MenubarCheckboxItem checked>
-                Always Show Full URLs
-              </MenubarCheckboxItem>
-              <MenubarSeparator />
-              <MenubarItem inset>
-                Reload <MenubarShortcut>⌘R</MenubarShortcut>
-              </MenubarItem>
-              <MenubarItem disabled inset>
-                Force Reload <MenubarShortcut>⇧⌘R</MenubarShortcut>
-              </MenubarItem>
-              <MenubarSeparator />
-              <MenubarItem inset>Toggle Fullscreen</MenubarItem>
-              <MenubarSeparator />
-              <MenubarItem inset>Hide Sidebar</MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
-          <MenubarMenu>
-            <MenubarTrigger>Profiles</MenubarTrigger>
-            <MenubarContent>
-              <MenubarRadioGroup value="benoit">
-                <MenubarRadioItem value="andy">Andy</MenubarRadioItem>
-                <MenubarRadioItem value="benoit">Benoit</MenubarRadioItem>
-                <MenubarRadioItem value="Luis">Luis</MenubarRadioItem>
-              </MenubarRadioGroup>
-              <MenubarSeparator />
-              <MenubarItem inset>Edit...</MenubarItem>
-              <MenubarSeparator />
-              <MenubarItem inset>Add Profile...</MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
-        </Menubar>
-      </TooltipProvider>
-    </div>
+            <Separator orientation="vertical" />
+
+            <MenubarMenu>
+              <MenubarTrigger>View</MenubarTrigger>
+              <MenubarContent>
+                <MenubarCheckboxItem>
+                  Always Show Bookmarks Bar
+                </MenubarCheckboxItem>
+                <MenubarCheckboxItem checked>
+                  Always Show Full URLs
+                </MenubarCheckboxItem>
+                <MenubarSeparator />
+                <MenubarItem inset>
+                  Reload <MenubarShortcut>⌘R</MenubarShortcut>
+                </MenubarItem>
+                <MenubarItem disabled inset>
+                  Force Reload <MenubarShortcut>⇧⌘R</MenubarShortcut>
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem inset>Toggle Fullscreen</MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem inset>Hide Sidebar</MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+            <MenubarMenu>
+              <MenubarTrigger>Exportar</MenubarTrigger>
+              <MenubarContent>
+                <MenubarRadioGroup value="benoit">
+                  <MenubarRadioItem value="andy">Texto</MenubarRadioItem>
+                  <MenubarRadioItem value="benoit">PDF</MenubarRadioItem>
+                  <MenubarRadioItem value="Luis">Docx</MenubarRadioItem>
+                </MenubarRadioGroup>
+                <MenubarSeparator />
+                <MenubarItem inset>Edit...</MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem inset>Add Profile...</MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>
+        </TooltipProvider>
+      </div>
+
+      {popupState.isOpen && (
+        <LinkPopup
+          x={popupState.x}
+          y={popupState.y}
+          initialUrl={popupState.initialUrl}
+          onSubmit={handleSubmitLink}
+          onRemove={handleRemoveLink}
+          isLinkActive={editor?.isActive("link")}
+        />
+      )}
+    </>
   );
 }
 
